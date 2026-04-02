@@ -1,0 +1,117 @@
+.about-page {
+  min-height: 100vh;
+  background-color: var(--color-gray-50);
+  padding: 5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.about-card {
+  max-width: 56rem;
+  margin: 0 auto;
+  background-color: var(--color-white);
+  border-radius: 2.5rem;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  border: 1px solid var(--color-yellow-light);
+  padding: 3rem;
+}
+
+@media (min-width: 640px) {
+  .about-card { padding: 4rem; }
+}
+
+.about-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.about-icon-wrapper {
+  background-color: var(--color-purple-light);
+  width: 5rem;
+  height: 5rem;
+  border-radius: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: var(--color-purple);
+}
+
+.about-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.about-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--color-gray-900);
+  letter-spacing: -0.02em;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.about-text {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--color-gray-600);
+  text-align: center;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+@media (min-width: 768px) {
+  .about-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.about-feature-card {
+  padding: 2rem;
+  border-radius: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.about-feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.about-feature-card.yellow {
+  background-color: var(--color-yellow-light);
+  border: 1px solid var(--color-yellow);
+}
+
+.about-feature-card.purple {
+  background-color: var(--color-purple-light);
+  border: 1px solid #ddd6fe;
+}
+
+.about-feature-icon {
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 1rem;
+}
+
+.yellow .about-feature-icon { color: var(--color-yellow-dark); }
+.purple .about-feature-icon { color: var(--color-purple); }
+
+.about-feature-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.about-feature-description {
+  font-size: 0.95rem;
+  color: var(--color-gray-600);
+  line-height: 1.5;
+}
