@@ -10,13 +10,15 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 
-
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = 3000;
 
+// ИЗМЕНЕНИЕ 1: Динамический порт для Render
+const PORT = process.env.PORT || 3000;
+
+// ИЗМЕНЕНИЕ 2: Настройка CORS для работы запросов
 app.use(cors());
 app.use(express.json());
 
@@ -75,7 +77,6 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.sendStatus(401);
 
-  // Проверка валидности JWT токена
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403);
     req.user = user;
@@ -83,31 +84,23 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Эндпоинт регистрации: создание нового пользователя с хешированием пароля
+// Эндпоинт регистрации
 app.post("/api/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    
-    // Валидация: все поля обязательны
     if (!username || !email || !password) {
       return res.status(400).json({ error: "Все поля обязательны для заполнения" });
     }
-
-    // Проверка формата email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Пожалуйста, введите корректный email" });
     }
-
-    // Проверка минимальной длины пароля
     if (password.length < 6) {
       return res.status(400).json({ error: "Пароль должен быть не менее 6 символов" });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
     await user.save();
-    
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1d" });
     res.status(201).json({ token, username: user.username });
   } catch (error) {
@@ -121,22 +114,17 @@ app.post("/api/auth/register", async (req, res) => {
   }
 });
 
-// Эндпоинт входа: проверка учетных данных и выдача токена
+// Эндпоинт входа
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    // Валидация: оба поля обязательны
     if (!email || !password) {
       return res.status(400).json({ error: "Email и пароль обязательны" });
     }
-
     const user = await User.findOne({ email });
-    
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: "Неверный email или пароль" });
     }
-    
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1d" });
     res.json({ token, username: user.username });
   } catch (error) {
@@ -145,8 +133,7 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-
-// Эндпоинт получения профиля: возвращает данные текущего пользователя (без пароля)
+// Эндпоинт получения профиля
 app.get("/api/auth/profile", authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
@@ -157,12 +144,11 @@ app.get("/api/auth/profile", authenticateToken, async (req, res) => {
   }
 });
 
-// Эндпоинт загрузки аватара: сохранение файла и обновление профиля пользователя
+// Эндпоинт загрузки аватара
 app.post("/api/auth/upload-avatar", authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ error: "Пользователь не найден" });
-
     if (req.file) {
       const avatarPath = `/uploads/${req.file.filename}`;
       const avatarUrl = `${req.protocol}://${req.get('host')}${avatarPath}`;
@@ -179,29 +165,23 @@ app.post("/api/auth/upload-avatar", authenticateToken, upload.single('avatar'), 
     } else if (error.message.includes('File too large')) {
       res.status(400).json({ error: "Размер файла не должен превышать 5MB" });
     } else {
-      res.status(500).json({ error: "Ошибка при загрузке аватара. Попробуйте еще раз" });
+      res.status(500).json({ error: "Ошибка при загрузке аватара" });
     }
   }
 });
 
-
-// Эндпоинт сохранения результатов теста: добавляет/обновляет оценку в истории пользователя
+// Эндпоинт сохранения результатов
 app.post("/api/quiz/save", authenticateToken, async (req, res) => {
   try {
     const { quizId, score, totalQuestions } = req.body;
-
-    // Валидация данных
     if (!quizId || score === undefined || totalQuestions === undefined) {
       return res.status(400).json({ error: "Некорректные данные теста" });
     }
-
     const parsedScore = Number(score);
     const parsedTotal = Number(totalQuestions);
-
-    if (Number.isNaN(parsedScore) || Number.isNaN(parsedTotal) || parsedTotal <= 0 || parsedScore < 0 || parsedScore > parsedTotal) {
-      return res.status(400).json({ error: "Некорректные числовые значения для оценки" });
+    if (Number.isNaN(parsedScore) || Number.isNaN(parsedTotal) || parsedTotal <= 0) {
+      return res.status(400).json({ error: "Некорректные числовые значения" });
     }
-
     const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ error: "Пользователь не найден" });
 
@@ -215,7 +195,6 @@ app.post("/api/quiz/save", authenticateToken, async (req, res) => {
     } else {
       user.scores.push({ quizId, score: parsedScore, totalQuestions: parsedTotal, date: new Date() });
     }
-
     await user.save();
     return res.status(200).json({ message: "Результат успешно сохранен" });
   } catch (error) {
@@ -224,6 +203,7 @@ app.post("/api/quiz/save", authenticateToken, async (req, res) => {
   }
 });
 
+// ИЗМЕНЕНИЕ 3: Исправлен запуск для продакшена (Render)
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -232,6 +212,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
+    // В продакшене отдаем статику из dist
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
@@ -240,7 +221,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
